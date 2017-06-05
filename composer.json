@@ -3,7 +3,6 @@
     "description": "GHR is a simple Guzzle wrapper + multiple request + DomCrawler",
     "keywords": ["guzzle", "laravel", "multiple", "request", "multi"],
     "license": "MIT",
-    "version": "1.0.5",
     "minimum-stability": "stable",
     "authors": [
         {
