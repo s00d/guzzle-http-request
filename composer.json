@@ -1,9 +1,8 @@
 {
     "name": "s00d/guzzle-http-request",
     "description": "GHR is a simple Guzzle wrapper + multiple request + DomCrawler",
-    "keywords": ["guzzle", "laravel", "multiple", "request", "multi"],
+    "keywords": ["http", "guzzle", "laravel", "multiple", "request", "multi"],
     "license": "MIT",
-    "minimum-stability": "stable",
     "authors": [
         {
             "name": "s00d",
