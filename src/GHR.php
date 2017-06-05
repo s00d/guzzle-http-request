@@ -31,7 +31,8 @@ use Concat\Http\Middleware\Logger;
  * @method string put(string $string)
  * @method string delete(string $string)
  */
-class GHR extends GHRCore{
+class GHR extends GHRCore
+{
     public function __construct(){}
 
     /**
@@ -41,18 +42,19 @@ class GHR extends GHRCore{
      * @param $baseUrl boolean|string
      * @return self
      */
-    public static function createRequest($url = '', $cookieFile = false, $baseUrl = false){
-        if(!self::$_instance) self::$_instance = new self();
+    public static function createRequest($url = '', $cookieFile = false, $baseUrl = false)
+    {
+        if (!self::$_instance) self::$_instance = new self();
 
         $handlerStack = HandlerStack::create();
-        if(config('ghr.cache')) $handlerStack->push(self::$_instance->_createCacheMiddleware(), 'cache');
+        if (config('ghr.cache')) $handlerStack->push(self::$_instance->_createCacheMiddleware(), 'cache');
 
-        if(config('ghr.logs')) {
+        if (config('ghr.logs')) {
             $logger = with(new \Monolog\Logger("api_log"))->pushHandler(new \Monolog\Handler\RotatingFileHandler(
-                storage_path('logs/' . config('ghr.logs') )
+                storage_path('logs/' . config('ghr.logs'))
             ));
             $middleware = new Logger($logger);
-            $middleware->setFormatter(new MessageFormatter("'{method} {target} HTTP/{version}' ". PHP_EOL ." [{date_common_log} {code} {res_header_Content-Length}]"));
+            $middleware->setFormatter(new MessageFormatter("'{method} {target} HTTP/{version}' " . PHP_EOL . " [{date_common_log} {code} {res_header_Content-Length}]"));
             $handlerStack->push($middleware);
         }
 
@@ -63,7 +65,7 @@ class GHR extends GHRCore{
             'cookies' => $cookieJar,
             'handler' => $handlerStack
         ];
-        if(config('ghr.base_url')) $param['base_url'] =  config('ghr.base_url');
+        if (config('ghr.base_url')) $param['base_url'] = config('ghr.base_url');
         self::$_instance->client = new Client($param);
 
         self::$_instance->url = $url;
@@ -84,13 +86,14 @@ class GHR extends GHRCore{
      * @param $redirect boolean не передавать параметр, необходим для правильной работы класса
      * @return $this
      */
-    public function send($redirect = false) {
+    public function send($redirect = false)
+    {
         try {
-            if($this->previousUrl) $this->addHeader('referer', $this->previousUrl);
+            if ($this->previousUrl) $this->addHeader('referer', $this->previousUrl);
             $this->previousUrl = $this->url;
-            if($this->type == 'POST') $this->addHeader('Content-Type', $this->contentType);
+            if ($this->type == 'POST') $this->addHeader('Content-Type', $this->contentType);
             else $this->removeHeader('Content-Type');
-            if($redirect) $this->redirectCount++; else $this->redirectCount = 0;
+            if ($redirect) $this->redirectCount++; else $this->redirectCount = 0;
             $this->paramsMarge($this->body, $this->getUrlParams());
             $this->data = new GHRResponseData($this->client->request($this->type, $this->url, $this->params));
 
@@ -120,7 +123,8 @@ class GHR extends GHRCore{
      * ];
      * @return $this
      */
-    public function multipleSend($fuild = false) {
+    public function multipleSend($fuild = false)
+    {
         $this->multiResp->clearResponses();
         $count = $this->multiResp->getQueueCount();
 
@@ -129,7 +133,7 @@ class GHR extends GHRCore{
             foreach ($queue as $key => $data) {
                 $this->setParamsByType($data['body_type'], $data['body']);
                 $this->paramsMarge($this->body, $this->getUrlParams());
-                if($data['content_type']) $this->setContentType($data['content_type']);
+                if ($data['content_type']) $this->setContentType($data['content_type']);
                 yield $this->client->requestAsync($data['type'], $data['url'], $this->params)
                     ->then(function (ResponseInterface $response) use ($key, $data, $fuild, &$count) {
                         $resp = (new GHRResponseData($response))->fuild($fuild);
@@ -147,7 +151,7 @@ class GHR extends GHRCore{
 
         $promise = new EachPromise($promises, [
             'concurrency' => $this->multipleFlowCount,
-            'fulfilled' => function ($responses){
+            'fulfilled' => function ($responses) {
                 if ($responses instanceof ResponseInterface) {
                     //
                 } elseif ($responses instanceof RequestException) {
@@ -166,10 +170,11 @@ class GHR extends GHRCore{
      * @param integer|string $id
      * @return $this
      */
-    public function addToQueue($url, $type = 'GET', $id = '') {
+    public function addToQueue($url, $type = 'GET', $id = '')
+    {
         $params = $this->getBody();
-        if(array_key_exists('body_type', $params)) $params['content_type'] = $this->contentType;
-        if($id !== '') $params['id'] = $id;
+        if (array_key_exists('body_type', $params)) $params['content_type'] = $this->contentType;
+        if ($id !== '') $params['id'] = $id;
         $this->multiResp->pushQueue($url, $type, $params);
         return $this;
     }
@@ -180,7 +185,8 @@ class GHR extends GHRCore{
      * @param integer $count
      * @return $this
      */
-    public function setMultipleFlowCount($count) {
+    public function setMultipleFlowCount($count)
+    {
         $this->multipleFlowCount = $count;
         return $this;
     }
@@ -191,7 +197,8 @@ class GHR extends GHRCore{
      * @param $data string
      * @return $this
      */
-    public function addHeader($title, $data) {
+    public function addHeader($title, $data)
+    {
         $this->params['headers'][$title] = $data;
         return $this;
     }
@@ -201,7 +208,8 @@ class GHR extends GHRCore{
      * @param $data array
      * @return $this
      */
-    public function addHeaders($data) {
+    public function addHeaders($data)
+    {
         foreach ($data as $key => $item) $this->params['headers'][$key] = $item;
         return $this;
     }
@@ -211,7 +219,8 @@ class GHR extends GHRCore{
      * @param $header string
      * @return $this
      */
-    function accept($header){
+    function accept($header)
+    {
         return $this->addHeaders(['Accept' => $header]);
     }
 
@@ -220,7 +229,8 @@ class GHR extends GHRCore{
      * @param $data array
      * @return $this
      */
-    public function setHeader($data) {
+    public function setHeader($data)
+    {
         $this->params['headers'] = $data;
         return $this;
     }
@@ -230,7 +240,8 @@ class GHR extends GHRCore{
      * @param $title string
      * @return $this
      */
-    public function removeHeader($title) {
+    public function removeHeader($title)
+    {
         unset($this->params['headers'][$title]);
         return $this;
     }
@@ -239,7 +250,8 @@ class GHR extends GHRCore{
      * Сброс заголовков
      * @return $this
      */
-    public function dropHeaders() {
+    public function dropHeaders()
+    {
         $this->params['headers'] = config('ghr.default_headers');
         return $this;
     }
@@ -249,7 +261,8 @@ class GHR extends GHRCore{
      * @param $type string
      * @return $this
      */
-    public function setType($type) {
+    public function setType($type)
+    {
         $this->type = $type;
         $this->rType = $type;
         return $this;
@@ -261,7 +274,8 @@ class GHR extends GHRCore{
      * @param $type string
      * @return $this
      */
-    public function setBody($body, $type = 'body') {
+    public function setBody($body, $type = 'body')
+    {
         $this->removeDataParams();
         $this->contentTypeAsForm();
         $this->body_type = $type;
@@ -273,8 +287,9 @@ class GHR extends GHRCore{
      * Установка параметров формы в формате массива
      * @return array
      */
-    public function getBody() {
-        if($this->body_type && $this->body) return ['body_type' => $this->body_type, 'body' => $this->body];
+    public function getBody()
+    {
+        if ($this->body_type && $this->body) return ['body_type' => $this->body_type, 'body' => $this->body];
         return [];
     }
 
@@ -283,7 +298,8 @@ class GHR extends GHRCore{
      * @param $form_params array
      * @return $this
      */
-    public function setFormParams($form_params){
+    public function setFormParams($form_params)
+    {
         $this->removeDataParams();
         $this->contentTypeAsForm();
         $this->body_type = 'form_params';
@@ -291,10 +307,11 @@ class GHR extends GHRCore{
         return $this;
     }
 
-    public function setParamsByType($type, $form_params){
+    public function setParamsByType($type, $form_params)
+    {
         $this->removeDataParams();
         $this->body_type = false;
-        if($type) {
+        if ($type) {
             $this->body_type = $type;
             $this->body = $form_params;
         }
@@ -307,7 +324,8 @@ class GHR extends GHRCore{
      * @param $multipart array
      * @return $this
      */
-    public function setMultipart($multipart) {
+    public function setMultipart($multipart)
+    {
         $this->removeDataParams();
         $this->contentTypeAsForm();
         $this->body_type = 'multipart';
@@ -320,7 +338,8 @@ class GHR extends GHRCore{
      * @param $query array
      * @return $this
      */
-    public function setQuery($query) {
+    public function setQuery($query)
+    {
         $this->removeDataParams();
         $this->contentTypeAsForm();
         $this->body_type = 'query';
@@ -333,7 +352,8 @@ class GHR extends GHRCore{
      * @param $json array
      * @return $this
      */
-    public function setJson($json) {
+    public function setJson($json)
+    {
         $this->removeDataParams();
         $this->contentTypeAsJson();
         $this->body_type = 'json';
@@ -345,7 +365,8 @@ class GHR extends GHRCore{
      * Отчистка параметров формы
      * @return $this
      */
-    public function removeDataParams() {
+    public function removeDataParams()
+    {
         $this->body_type = false;
         $this->body = [];
         unset($this->params['body']);
@@ -362,17 +383,20 @@ class GHR extends GHRCore{
      * @param $data string данные поля
      * @return $this
      */
-    public function addDataParam($title, $data = '_add_disable_rm_') {
-        if($data == '_add_disable_rm_') unset($this->body[$title]);
+    public function addDataParam($title, $data = '_add_disable_rm_')
+    {
+        if ($data == '_add_disable_rm_') unset($this->body[$title]);
         else $this->body[$title] = $data;
         return $this;
     }
+
     /**
      * Замена параметров к форме
      * @param $data array данные поля
      * @return $this
      */
-    public function setDataParam($data) {
+    public function setDataParam($data)
+    {
         $this->body = $data;
         return $this;
     }
@@ -382,15 +406,18 @@ class GHR extends GHRCore{
      * @param $proxy
      * @return $this
      */
-    public function setProxy($proxy) {
+    public function setProxy($proxy)
+    {
         $this->params['proxy'] = $proxy;
         return $this;
     }
+
     /**
      * Отключение прокси
      * @return $this
      */
-    public function removeProxy() {
+    public function removeProxy()
+    {
         unset($this->params['proxy']);
         return $this;
     }
@@ -400,7 +427,8 @@ class GHR extends GHRCore{
      * @param $version
      * @return $this
      */
-    public function setSslVersion($version) {
+    public function setSslVersion($version)
+    {
         $this->params['curl'][CURLOPT_SSLVERSION] = $version;
         return $this;
     }
@@ -410,15 +438,18 @@ class GHR extends GHRCore{
      * @param $data array массив в формате ['username', 'password']
      * @return $this
      */
-    public function setAuth($data) {
+    public function setAuth($data)
+    {
         $this->params['auth'] = $data;
         return $this;
     }
+
     /**
      * Удаление авторизации из запроса
      * @return $this
      */
-    public function removeAuth() {
+    public function removeAuth()
+    {
         unset($this->params['auth']);
         return $this;
     }
@@ -428,7 +459,8 @@ class GHR extends GHRCore{
      * @param $seconds integer
      * @return $this
      */
-    public function setTimeout($seconds) {
+    public function setTimeout($seconds)
+    {
         $this->params['timeout'] = $seconds;
         return $this;
     }
@@ -438,8 +470,9 @@ class GHR extends GHRCore{
      * @param $debug boolean
      * @return $this
      */
-    public function setDebug($debug) {
-        if($debug) $this->params['timeout'] = true;
+    public function setDebug($debug)
+    {
+        if ($debug) $this->params['timeout'] = true;
         else unset($this->params['timeout']);
         return $this;
     }
@@ -449,7 +482,8 @@ class GHR extends GHRCore{
      * @param $url string
      * @return $this
      */
-    public function setUrl($url) {
+    public function setUrl($url)
+    {
         $this->url = $url;
         return $this;
     }
@@ -458,7 +492,8 @@ class GHR extends GHRCore{
      * получение последней активной ссылки(в случае редиректа будет получена последняя)
      * @return string
      */
-    public function getUrl() {
+    public function getUrl()
+    {
         return $this->url;
     }
 
@@ -467,7 +502,8 @@ class GHR extends GHRCore{
      * @param $http_errors boolean
      * @return $this
      */
-    public function setHttpErrors($http_errors) {
+    public function setHttpErrors($http_errors)
+    {
         $this->params['http_errors'] = $http_errors;
         return $this;
     }
@@ -477,7 +513,8 @@ class GHR extends GHRCore{
      * @param $count integer
      * @return $this
      */
-    public function setRedirects($count) {
+    public function setRedirects($count)
+    {
         $this->maxRedirects = $count;
         return $this;
     }
@@ -487,16 +524,19 @@ class GHR extends GHRCore{
      * @param $type string
      * @return $this
      */
-    public function setContentType($type) {
+    public function setContentType($type)
+    {
         $this->contentType = $type;
         return $this;
     }
 
-    public function contentTypeAsJson() {
+    public function contentTypeAsJson()
+    {
         return $this->setContentType('application/json');
     }
 
-    public function contentTypeAsForm() {
+    public function contentTypeAsForm()
+    {
         return $this->setContentType('application/x-www-form-urlencoded');
     }
 
@@ -505,8 +545,9 @@ class GHR extends GHRCore{
      * @param $redirects Boolean
      * @return $this
      */
-    public function setGuzzleRedirects($redirects) {
-        if($redirects) $this->params['redirect'] = [
+    public function setGuzzleRedirects($redirects)
+    {
+        if ($redirects) $this->params['redirect'] = [
             'strict' => true,
             'max' => $this->maxRedirects
         ];
@@ -518,7 +559,8 @@ class GHR extends GHRCore{
     /**
      * @return GHRMultipleResponse
      */
-    public function getMultiResp() {
+    public function getMultiResp()
+    {
         return $this->multiResp;
     }
 
@@ -526,7 +568,8 @@ class GHR extends GHRCore{
      * Прямое получение экземпляра Crawler`a
      * @return Crawler
      */
-    public function getCrawler(){
+    public function getCrawler()
+    {
         $crawler = new Crawler(null, $this->getUrl());
         $crawler->addContent($this->getRequestBody(), $this->data->getHeader('Content-Type'));
         return $crawler;
@@ -552,7 +595,7 @@ class GHR extends GHRCore{
         $this->setUrl($form->getUri());
 
         $values = $form->getPhpValues();
-        if(!empty($values)) $this->setFormParams($values);
+        if (!empty($values)) $this->setFormParams($values);
 
         $this->send(false);
         return $this;
@@ -562,7 +605,8 @@ class GHR extends GHRCore{
      * Получение body
      * @return bool|StreamInterface
      */
-    public function getRequestBody(){
+    public function getRequestBody()
+    {
         return ($this->data) ? $this->data->body() : false;
     }
 
@@ -570,7 +614,8 @@ class GHR extends GHRCore{
      * Получение GuzzleHttpResponse
      * @return GHRResponseData
      */
-    public function getRequestData(){
+    public function getRequestData()
+    {
         return $this->data;
     }
 
@@ -578,7 +623,8 @@ class GHR extends GHRCore{
      * Получение контента
      * @return bool|string
      */
-    public function getContents() {
+    public function getContents()
+    {
         return ($this->data) ? $this->data->contents() : false;
     }
 
@@ -587,13 +633,15 @@ class GHR extends GHRCore{
      * @param $parse bool
      * @return bool|mixed
      */
-    public function getJson($parse = true){
+    public function getJson($parse = true)
+    {
         return ($this->data) ? $this->data->json($parse) : false;
     }
 
 }
 
-class GHRCore {
+class GHRCore
+{
 
     /** @var FileCookieJar $cookieJar */
     protected static $_instance = false;
@@ -614,9 +662,12 @@ class GHRCore {
     protected $body = [];
     protected $body_type = false;
 
-    public function __construct(){}
+    public function __construct()
+    {
+    }
 
-    protected function _createCacheMiddleware() {
+    protected function _createCacheMiddleware()
+    {
         return new CacheMiddleware(new PrivateCacheStrategy(new LaravelCacheStorage(Cache::store('redis'))));
     }
 
@@ -628,10 +679,11 @@ class GHRCore {
      * @return mixed
      * @throws \Exception
      */
-    function __call($name, $args){
-        if(!array_key_exists(strtoupper($name), array_flip(['GET', 'POST', 'PATCH', 'PUT', 'DELETE']))) throw new \Exception(sprintf('error! method not found'));
-        if (function_exists($name)){
-            if(!array_key_exists(0, $args)) throw new \Exception(sprintf('error! url not found'));
+    function __call($name, $args)
+    {
+        if (!array_key_exists(strtoupper($name), array_flip(['GET', 'POST', 'PATCH', 'PUT', 'DELETE']))) throw new \Exception(sprintf('error! method not found'));
+        if (function_exists($name)) {
+            if (!array_key_exists(0, $args)) throw new \Exception(sprintf('error! url not found'));
             $this->setType(strtoupper($name));
             $this->setUrl($args[0]);
             if (array_key_exists(1, $args)) $this->setDataParam($args[1]);
@@ -641,9 +693,10 @@ class GHRCore {
         }
     }
 
-    protected function genParams() {
+    protected function genParams()
+    {
         $params = [
-            'verify'  => false,
+            'verify' => false,
             'timeout' => 100,
             'headers' => config('ghr.default_headers'),
             'allow_redirects' => false,
@@ -672,37 +725,38 @@ class GHRCore {
      */
     protected function getAbsoluteUri($uri)
     {
-        if(is_array($uri)) $uri = end($uri);
+        if (is_array($uri)) $uri = end($uri);
         // already absolute?
         if (0 === strpos($uri, 'http://') || 0 === strpos($uri, 'https://')) return $uri;
         // protocol relative URL
-        if (0 === strpos($uri, '//')) return parse_url($uri, PHP_URL_SCHEME).':'.$uri;
+        if (0 === strpos($uri, '//')) return parse_url($uri, PHP_URL_SCHEME) . ':' . $uri;
 
         $currentUri = ($this->previousUrl) ? $this->previousUrl : $this->client->getConfig('base_url');
         // protocol relative URL
-        if (0 === strpos($uri, '//')) return parse_url($currentUri, PHP_URL_SCHEME).':'.$uri;
+        if (0 === strpos($uri, '//')) return parse_url($currentUri, PHP_URL_SCHEME) . ':' . $uri;
         // anchor or query string parameters?
-        if (!$uri || '#' == $uri[0] || '?' == $uri[0]) return preg_replace('/[#?].*?$/', '', $currentUri).$uri;
+        if (!$uri || '#' == $uri[0] || '?' == $uri[0]) return preg_replace('/[#?].*?$/', '', $currentUri) . $uri;
 
         if ('/' !== $uri[0]) {
             $path = parse_url($currentUri, PHP_URL_PATH);
             if ('/' !== substr($path, -1)) {
                 $path = substr($path, 0, strrpos($path, '/') + 1);
             }
-            $uri = $path.$uri;
+            $uri = $path . $uri;
         }
 
-        return preg_replace('#^(.*?//[^/]+)\/.*$#', '$1', $currentUri).$uri;
+        return preg_replace('#^(.*?//[^/]+)\/.*$#', '$1', $currentUri) . $uri;
     }
 
     /**
      * Функция получает домен и подставляет порт при необходимости
      * @return string
      */
-    protected function extractHost(){
+    protected function extractHost()
+    {
         $host = parse_url($this->url, PHP_URL_HOST);
         if ($port = parse_url($this->url, PHP_URL_PORT)) {
-            return $host.':'.$port;
+            return $host . ':' . $port;
         }
         return $host;
     }
@@ -729,13 +783,15 @@ class GHRCore {
         return $this->send(true);
     }
 
-    protected function getUrlParams() {
+    protected function getUrlParams()
+    {
         parse_str(parse_url($this->url, PHP_URL_QUERY), $query);
         return $query;
     }
 
-    protected function paramsMarge($data, $urlParams) {
-        if(count($urlParams) > 0 && $this->body_type == false) $this->body_type = 'query';
+    protected function paramsMarge($data, $urlParams)
+    {
+        if (count($urlParams) > 0 && $this->body_type == false) $this->body_type = 'query';
         $this->params[$this->body_type] = array_merge($data, $urlParams);
 
         return $this;
@@ -747,25 +803,36 @@ class GHRResponseData
     /** @var ResponseInterface $response */
     private $response;
 
-    function __construct($response, $fuild = false){
+    function __construct($response, $fuild = false)
+    {
         $this->response = $response;
     }
-    function body(){
-        return (string) $this->response->getBody();
+
+    function body()
+    {
+        return (string)$this->response->getBody();
     }
-    function contents(){
+
+    function contents()
+    {
         return $this->response->getBody()->getContents();
     }
-    function json($parse = true){
+
+    function json($parse = true)
+    {
         return json_decode($this->response->getBody(), $parse);
     }
-    function fuild($name = false){
+
+    function fuild($name = false)
+    {
         $data = $this->json();
-        if($name == false) return $data;
+        if ($name == false) return $data;
         if (array_key_exists($name, $data)) return $data[$name];
         return false;
     }
-    function getHeader($header, $first = true){
+
+    function getHeader($header, $first = true)
+    {
         return $this->response->getHeaderLine($header);
 //        $normalizedHeader = str_replace('-', '_', strtolower($header));
 //        $seader = $this->response->getHeaders();
@@ -781,48 +848,73 @@ class GHRResponseData
 //
 //        return $first ? null : array();
     }
-    function getHeaders(){
+
+    function getHeaders()
+    {
         return $this->response->getHeaders();
     }
-    function status(){
+
+    function status()
+    {
         return $this->response->getStatusCode();
     }
-    function isSuccess(){
+
+    function isSuccess()
+    {
         return $this->status() >= 200 && $this->status() < 300;
     }
-    function isOk(){
+
+    function isOk()
+    {
         return $this->isSuccess();
     }
-    function isRedirect(){
+
+    function isRedirect()
+    {
         return $this->status() >= 300 && $this->status() < 400;
     }
-    function isGetRedirect(){
+
+    function isGetRedirect()
+    {
         return $this->status() == 302 || $this->status() < 303;
     }
-    function isClientError(){
+
+    function isClientError()
+    {
         return $this->status() >= 400 && $this->status() < 500;
     }
-    function isServerError(){
+
+    function isServerError()
+    {
         return $this->status() >= 500;
     }
-    function __call($method, $args){
+
+    function __call($method, $args)
+    {
         return $this->response->{$method}(...$args);
     }
 }
 
-class GHRMultipleResponse {
+class GHRMultipleResponse
+{
     protected $err;
     protected $finish;
     protected $response;
     protected $queue = [];
-    function __construct(){
+
+    function __construct()
+    {
     }
-    public function clearResponses() {
+
+    public function clearResponses()
+    {
         $this->err = [];
         $this->finish = [];
         $this->response = [];
     }
-    public function pushQueue($url, $type = 'GET', $params = ['body_type', 'body', 'id']) {
+
+    public function pushQueue($url, $type = 'GET', $params = ['body_type', 'body', 'id'])
+    {
         $data = [
             'url' => $url,
             'type' => $type,
@@ -830,40 +922,59 @@ class GHRMultipleResponse {
             'body' => array_key_exists('body', $params) ? $params['body'] : false,
             'content_type' => array_key_exists('body', $params) ? $params['body'] : false
         ];
-        if( array_key_exists('id', $params)) $this->queue[$params['id']] = $data;
+        if (array_key_exists('id', $params)) $this->queue[$params['id']] = $data;
         else $this->queue[] = $data;
     }
-    public function setQueue($data) {
+
+    public function setQueue($data)
+    {
         $this->queue = $data;
     }
-    public function getQueueCount() {
+
+    public function getQueueCount()
+    {
         return count($this->queue);
     }
-    public function getQueue() {
+
+    public function getQueue()
+    {
         $result = $this->queue;
         $this->queue = [];
         return $result;
     }
 
-    public function addError($id, $data) {
+    public function addError($id, $data)
+    {
         $this->err[$id] = $data;
     }
-    public function addEnd($id, $data) {
+
+    public function addEnd($id, $data)
+    {
         $this->finish[$id] = $data;
     }
-    public function addResponse($id, $data) {
+
+    public function addResponse($id, $data)
+    {
         $this->response[$id] = $data;
     }
-    public function errors() {
+
+    public function errors()
+    {
         return $this->err;
     }
-    public function finished() {
+
+    public function finished()
+    {
         return $this->finish;
     }
-    public function responses() {
+
+    public function responses()
+    {
         return $this->response;
     }
-    public function responseQueue($string = false) {
+
+    public function responseQueue($string = false)
+    {
         $data = [];
         foreach ($this->err as $item) {
             $data[] = $string ? json_encode($item) : $item;
