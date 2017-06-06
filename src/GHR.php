@@ -48,9 +48,9 @@ class GHR extends GHRCore
         if (config('ghr.cache')) $handlerStack->push(self::$_instance->_createCacheMiddleware(), 'cache');
 
         if (config('ghr.logs')) {
-            $logger = with(new \Monolog\Logger("api_log"))->pushHandler(new \Monolog\Handler\RotatingFileHandler(
-                storage_path('logs/' . config('ghr.logs'))
-            ));
+            $logger = with(new \Monolog\Logger("api_log"))->pushHandler(
+                new \Monolog\Handler\RotatingFileHandler(storage_path('logs/ghr.log'))
+            );
             $middleware = new Logger($logger);
             $middleware->setFormatter(new MessageFormatter("'{method} {target} HTTP/{version}' " . PHP_EOL . " [{date_common_log} {code} {res_header_Content-Length}]"));
             $handlerStack->push($middleware);
