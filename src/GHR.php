@@ -33,18 +33,14 @@ use Concat\Http\Middleware\Logger;
  */
 class GHR extends GHRCore
 {
-    public function __construct(){
-        $this->createRequest();
-    }
+    private function __construct(){}
 
     /**
      * Создание запроса, для сброса всех параметров необходимо еще раз обратиться к этой функции
      * @param $url string
-     * @param $cookieFile boolean|string
-     * @param $baseUrl boolean|string
      * @return self
      */
-    public static function createRequest($url = '', $cookieFile = false, $baseUrl = false)
+    public static function createRequest($url = '')
     {
         if (!self::$_instance) self::$_instance = new self();
 
@@ -663,10 +659,6 @@ class GHRCore
     protected $params = [];
     protected $body = [];
     protected $body_type = false;
-
-    public function __construct()
-    {
-    }
 
     protected function _createCacheMiddleware()
     {
