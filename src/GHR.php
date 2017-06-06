@@ -56,7 +56,7 @@ class GHR extends GHRCore
             $handlerStack->push($middleware);
         }
 
-        $cookieJar = config('ghr.cookie_file') ? new FileCookieJar(config('ghr.cookie_file'), TRUE) : new CookieJar;
+        $cookieJar = config('ghr.cookie_file') ? new FileCookieJar(storage_path('cookie\\'.config('ghr.cookie_file')), TRUE) : new CookieJar;
         $param = [
             'timeout' => 90,
             'verify' => false,
