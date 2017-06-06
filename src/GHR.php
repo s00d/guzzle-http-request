@@ -33,7 +33,7 @@ use Concat\Http\Middleware\Logger;
  */
 class GHR extends GHRCore
 {
-    private function __construct(){}
+    public function __construct(){}
 
     /**
      * Создание запроса, для сброса всех параметров необходимо еще раз обратиться к этой функции

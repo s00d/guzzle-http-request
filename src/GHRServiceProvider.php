@@ -21,7 +21,7 @@ class GHRServiceProvider extends ServiceProvider {
     {
         // Register providers.
         $this->app->bind('GHR', function($app) {
-            return GHR::createRequest();
+            return new GHR;
         });
     }
     /**
