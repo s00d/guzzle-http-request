@@ -126,7 +126,7 @@ class GHR extends GHRCore
         $this->multiResp->clearResponses();
         $count = $this->multiResp->getQueueCount();
 
-        $promises = (function () use ($fuild, &$count) {
+        $promises = function () use ($fuild, &$count) {
             $queue = $this->multiResp->getQueue();
             foreach ($queue as $key => $data) {
                 $this->setParamsByType($data['body_type'], $data['body']);
@@ -145,9 +145,9 @@ class GHR extends GHRCore
                         return $e;
                     });
             }
-        })();
+        };
 
-        $promise = new EachPromise($promises, [
+        $promise = new EachPromise($promises(), [
             'concurrency' => $this->multipleFlowCount,
             'fulfilled' => function ($responses) {
                 if ($responses instanceof ResponseInterface) {
