@@ -470,8 +470,8 @@ class GHR extends GHRCore
      */
     public function setDebug($debug)
     {
-        if ($debug) $this->params['timeout'] = true;
-        else unset($this->params['timeout']);
+        if ($debug) $this->params['debug'] = true;
+        else unset($this->params['debug']);
         return $this;
     }
 
