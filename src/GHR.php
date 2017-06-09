@@ -4,7 +4,7 @@ namespace s00d\GuzzleHttpRequest;
 
 use \GuzzleHttp\Client;
 use \GuzzleHttp\Cookie\CookieJar;
-use GuzzleHttp\Cookie\FileCookieJar;
+use \GuzzleHttp\Cookie\FileCookieJar;
 
 use GuzzleHttp\Exception\RequestException;
 use GuzzleHttp\MessageFormatter;
@@ -56,11 +56,11 @@ class GHR extends GHRCore
             $handlerStack->push($middleware);
         }
 
-        $cookieJar = config('ghr.cookie_file') ? new FileCookieJar(storage_path('cookie\\'.config('ghr.cookie_file')), TRUE) : new CookieJar;
+        self::$_instance->cookieJar = config('ghr.cookie_file') ? new FileCookieJar(storage_path('cookie\\'.config('ghr.cookie_file')), TRUE) : new CookieJar;
         $param = [
-            'timeout' => 90,
+            'timeout' => 100,
             'verify' => false,
-            'cookies' => $cookieJar,
+            'cookies' => self::$_instance->cookieJar,
             'handler' => $handlerStack
         ];
         if (config('ghr.base_url')) $param['base_url'] = config('ghr.base_url');
@@ -92,6 +92,7 @@ class GHR extends GHRCore
             if ($this->type == 'POST') $this->addHeader('Content-Type', $this->contentType);
             else $this->removeHeader('Content-Type');
             if ($redirect) $this->redirectCount++; else $this->redirectCount = 0;
+            if (!$redirect) $this->addHeader('host', $this->extractHost());
             $this->paramsMarge($this->body, $this->getUrlParams());
             $this->data = new GHRResponseData($this->client->request($this->type, $this->url, $this->params));
 
@@ -147,17 +148,7 @@ class GHR extends GHRCore
             }
         };
 
-        $promise = new EachPromise($promises(), [
-            'concurrency' => $this->multipleFlowCount,
-            'fulfilled' => function ($responses) {
-                if ($responses instanceof ResponseInterface) {
-                    //
-                } elseif ($responses instanceof RequestException) {
-                    echo $responses->getMessage();
-                }
-            },
-        ]);
-        $promise->promise()->wait();
+        $this->runQueuePromise($promises);
         return $this;
     }
 
@@ -252,6 +243,17 @@ class GHR extends GHRCore
     {
         $this->params['headers'] = config('ghr.default_headers');
         return $this;
+    }
+
+    /**
+     * Установкка предыдущей ссылкуи
+     * @param $url string|boolean
+     * @return self
+     */
+    public function setPreviousUrl($url = false) {
+        $this->previousUrl = $url;
+        return $this;
+
     }
 
     /**
@@ -470,8 +472,8 @@ class GHR extends GHRCore
      */
     public function setDebug($debug)
     {
-        if ($debug) $this->params['debug'] = true;
-        else unset($this->params['debug']);
+        if ($debug) $this->params['timeout'] = true;
+        else unset($this->params['timeout']);
         return $this;
     }
 
@@ -575,6 +577,26 @@ class GHR extends GHRCore
     }
 
     /**
+     * Сброс параметров
+     * @return $this
+     */
+    public function setDefaultParams()
+    {
+        $this->params = $this->genParams();
+        return $this;
+
+    }
+
+    /**
+     * Куки
+     * @return $this->cookieJar
+     */
+    public function cookie()
+    {
+        return $this->cookieJar;
+    }
+
+    /**
      * Отправка параметров из формы
      * @param $form Form Форма с параметрами
      * $form = $this->crawler->selectButton('Войти')->form();
@@ -641,10 +663,12 @@ class GHR extends GHRCore
 class GHRCore
 {
 
-    /** @var FileCookieJar $cookieJar */
+    /** @var GHR $_instance */
     protected static $_instance = false;
     /** @var \GuzzleHttp\Client $client */
     protected $client;
+    /** @var FileCookieJar $cookieJar */
+    protected $cookieJar;
     protected $url = '', $previousUrl = false;
     protected $type = 'GET', $rType = 'GET';
     /** @var GHRResponseData $data */
@@ -753,6 +777,24 @@ class GHRCore
             return $host . ':' . $port;
         }
         return $host;
+    }
+
+    /**
+     * Запуск промиса и ожидание заверщения
+     * @param $promises
+     */
+    private function runQueuePromise($promises) {
+        $promise = new EachPromise($promises(), [
+            'concurrency' => $this->multipleFlowCount,
+            'fulfilled' => function ($responses) {
+//                if ($responses instanceof ResponseInterface) {
+//                    //
+//                } elseif ($responses instanceof RequestException) {
+//                    echo $responses->getMessage();
+//                }
+            },
+        ]);
+        $promise->promise()->wait();
     }
 
     /**
