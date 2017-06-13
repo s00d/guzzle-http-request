@@ -783,7 +783,7 @@ class GHRCore
      * Запуск промиса и ожидание заверщения
      * @param $promises
      */
-    private function runQueuePromise($promises) {
+    protected function runQueuePromise($promises) {
         $promise = new EachPromise($promises(), [
             'concurrency' => $this->multipleFlowCount,
             'fulfilled' => function ($responses) {
