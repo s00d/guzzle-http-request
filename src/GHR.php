@@ -111,31 +111,24 @@ class GHR extends GHRCore
     /**
      * Отправка асинхронных заапросов через газл. После отправки очередь отчищается.
      * @todo  полностью переписать. Как вариант можно переделать на класс очереди, добавив туда саму очередь, метод для добавления в очередь и метод для получения всей очереди с отчисткой
-     * @param $fuild string|boolean пример
-     * $urlData = [
-     *     0 => [
-     *          'type' => 'POST',
-     *          'url' => 'http://on.ru/api/getReceiveParams.php?apikey=1874fcb81e8cde02b9b313173d94da85'
-     *          'body' => [],
-     *          'body_type' => 'json'
-     *    ]
-     * ];
+     * @param $fuild string|boolean После json
+     * @param $remuve string|boolean удаление текста, перед конвертацией
      * @return $this
      */
-    public function multipleSend($fuild = false)
+    public function multipleSend($fuild = false, $parse = true, $remuve = false)
     {
         $this->multiResp->clearResponses();
         $count = $this->multiResp->getQueueCount();
 
-        $promises = function () use ($fuild, &$count) {
+        $promises = function () use ($fuild, &$count, $remuve, $parse) {
             $queue = $this->multiResp->getQueue();
             foreach ($queue as $key => $data) {
                 $this->setParamsByType($data['body_type'], $data['body']);
                 $this->paramsMarge($this->body, $this->getUrlParams());
                 if ($data['content_type']) $this->setContentType($data['content_type']);
                 yield $this->client->requestAsync($data['type'], $data['url'], $this->params)
-                    ->then(function (ResponseInterface $response) use ($key, $data, $fuild, &$count) {
-                        $resp = (new GHRResponseData($response))->fuild($fuild);
+                    ->then(function (ResponseInterface $response) use ($key, $data, $fuild, &$count, $remuve, $parse) {
+                        $resp = (new GHRResponseData($response))->fuild($fuild, $remuve, $parse);
                         $this->multiResp->addResponse($key, $resp);
                         $this->multiResp->addEnd($key, $data);
                         echo "Promise! {$key} / {$count} \n";
@@ -854,14 +847,21 @@ class GHRResponseData
         return $this->response->getBody()->getContents();
     }
 
-    function json($parse = true)
+    function json($parse = true, $depth = 512, $options = 0)
     {
-        return json_decode($this->response->getBody(), $parse);
+        return json_decode($this->response->getBody()->getContents(), $parse, $depth, $options);
     }
 
-    function fuild($name = false)
+    function jsonClear($remove = false, $parse = true)
     {
-        $data = $this->json();
+        $body = $this->response->getBody()->getContents();
+        if($remove) $body = preg_replace($remove['pattern'], $remove['replace'], $body);
+        return json_decode($body, true, 512, JSON_BIGINT_AS_STRING);
+    }
+
+    function fuild($name = false, $remuve = false, $parse = true)
+    {
+        $data = $this->jsonClear($remuve);
         if ($name == false) return $data;
         if (array_key_exists($name, $data)) return $data[$name];
         return false;
