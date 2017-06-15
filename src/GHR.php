@@ -111,29 +111,30 @@ class GHR extends GHRCore
     /**
      * Отправка асинхронных заапросов через газл. После отправки очередь отчищается.
      * @todo  полностью переписать. Как вариант можно переделать на класс очереди, добавив туда саму очередь, метод для добавления в очередь и метод для получения всей очереди с отчисткой
-     * @param $fuild string|boolean После json
-     * @param $remuve string|boolean удаление текста, перед конвертацией
+     * @param $parse boolean Тип json
+     * @param $callback
      * @return $this
      */
-    public function multipleSend($fuild = false, $parse = true, $remuve = false)
+    public function multipleSend($parse = true, $callback = false)
     {
         $this->multiResp->clearResponses();
         $count = $this->multiResp->getQueueCount();
 
-        $promises = function () use ($fuild, &$count, $remuve, $parse) {
+        $promises = function () use ($count, $parse) {
             $queue = $this->multiResp->getQueue();
             foreach ($queue as $key => $data) {
                 $this->setParamsByType($data['body_type'], $data['body']);
                 $this->paramsMarge($this->body, $this->getUrlParams());
                 if ($data['content_type']) $this->setContentType($data['content_type']);
                 yield $this->client->requestAsync($data['type'], $data['url'], $this->params)
-                    ->then(function (ResponseInterface $response) use ($key, $data, $fuild, &$count, $remuve, $parse) {
-                        $resp = (new GHRResponseData($response))->fuild($fuild, $remuve, $parse);
-                        $this->multiResp->addResponse($key, $resp);
+                    ->then(function (ResponseInterface $response) use ($key, $data, $count, $parse) {
+                        $resp = (new GHRResponseData($response));
+                        if ($data['callback']) $data['callback']($key, $resp);
+                        $this->multiResp->addResponse($key, $resp->json($parse));
                         $this->multiResp->addEnd($key, $data);
                         echo "Promise! {$key} / {$count} \n";
                         return $response->getBody()->getContents();
-                    }, function (RequestException $e) use ($key, $data, &$count) {
+                    }, function (RequestException $e) use ($key, $data, $count) {
                         $this->multiResp->addError($key, $data);
                         echo "err! {$key} / {$count} \n";
                         return $e;
@@ -141,7 +142,7 @@ class GHR extends GHRCore
             }
         };
 
-        $this->runQueuePromise($promises);
+        $this->runQueuePromise($promises, $callback);
         return $this;
     }
 
@@ -152,12 +153,12 @@ class GHR extends GHRCore
      * @param integer|string $id
      * @return $this
      */
-    public function addToQueue($url, $type = 'GET', $id = '')
+    public function addToQueue($url, $type = 'GET', $id = '', $callback = false)
     {
         $params = $this->getBody();
         if (array_key_exists('body_type', $params)) $params['content_type'] = $this->contentType;
         if ($id !== '') $params['id'] = $id;
-        $this->multiResp->pushQueue($url, $type, $params);
+        $this->multiResp->pushQueue($url, $type, $params, $callback);
         return $this;
     }
 
@@ -775,16 +776,17 @@ class GHRCore
     /**
      * Запуск промиса и ожидание заверщения
      * @param $promises
+     * @param $callback mixed
      */
-    protected function runQueuePromise($promises) {
+    protected function runQueuePromise($promises, $callback = false) {
         $promise = new EachPromise($promises(), [
             'concurrency' => $this->multipleFlowCount,
-            'fulfilled' => function ($responses) {
-//                if ($responses instanceof ResponseInterface) {
-//                    //
-//                } elseif ($responses instanceof RequestException) {
+            'fulfilled' => function ($responses) use ($callback) {
+                if ($responses instanceof ResponseInterface)  {
+                    if($callback) $callback($responses);
+                } elseif ($responses instanceof RequestException) {
 //                    echo $responses->getMessage();
-//                }
+                }
             },
         ]);
         $promise->promise()->wait();
@@ -852,16 +854,16 @@ class GHRResponseData
         return json_decode($this->response->getBody()->getContents(), $parse, $depth, $options);
     }
 
-    function jsonClear($remove = false, $parse = true)
+    function jsonClear($parse = true, $remove = false)
     {
         $body = $this->response->getBody()->getContents();
         if($remove) $body = preg_replace($remove['pattern'], $remove['replace'], $body);
-        return json_decode($body, true, 512, JSON_BIGINT_AS_STRING);
+        return json_decode($body, $parse, 512, JSON_BIGINT_AS_STRING);
     }
 
-    function fuild($name = false, $remuve = false, $parse = true)
+    function fuild($name = false, $parse = true, $remuve = false)
     {
-        $data = $this->jsonClear($remuve);
+        $data = $this->jsonClear($parse, $remuve);
         if ($name == false) return $data;
         if (array_key_exists($name, $data)) return $data[$name];
         return false;
@@ -949,11 +951,12 @@ class GHRMultipleResponse
         $this->response = [];
     }
 
-    public function pushQueue($url, $type = 'GET', $params = ['body_type', 'body', 'id'])
+    public function pushQueue($url, $type = 'GET', $params = ['body_type', 'body', 'id'], $callback = false)
     {
         $data = [
             'url' => $url,
             'type' => $type,
+            'callback' => $callback,
             'body_type' => array_key_exists('body_type', $params) ? $params['body_type'] : false,
             'body' => array_key_exists('body', $params) ? $params['body'] : false,
             'content_type' => array_key_exists('body', $params) ? $params['body'] : false
