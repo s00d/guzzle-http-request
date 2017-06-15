@@ -1,10 +1,10 @@
 # GHR
 
+[packagist](https://packagist.org/packages/s00d/guzzle-http-request)
+
 GHR is a simple Guzzle wrapper + multiple request + DomCrawler
 
-
 Real documentation is in the works, but for now [read the tests](https://github.com/s00d/guzzle-http-request/blob/master/tests/Unit/GuzzleHttpRequestTest.php).
-
 
 ## Installation
 
