@@ -854,21 +854,6 @@ class GHRResponseData
         return json_decode($this->response->getBody()->getContents(), $parse, $depth, $options);
     }
 
-    function jsonClear($parse = true, $remove = false)
-    {
-        $body = $this->response->getBody()->getContents();
-        if($remove) $body = preg_replace($remove['pattern'], $remove['replace'], $body);
-        return json_decode($body, $parse, 512, JSON_BIGINT_AS_STRING);
-    }
-
-    function fuild($name = false, $parse = true, $remuve = false)
-    {
-        $data = $this->jsonClear($parse, $remuve);
-        if ($name == false) return $data;
-        if (array_key_exists($name, $data)) return $data[$name];
-        return false;
-    }
-
     function getHeader($header, $first = true)
     {
         return $this->response->getHeaderLine($header);
