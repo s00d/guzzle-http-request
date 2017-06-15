@@ -130,7 +130,7 @@ class GHR extends GHRCore
                     ->then(function (ResponseInterface $response) use ($key, $data, $count, $parse) {
                         $resp = (new GHRResponseData($response));
                         if ($data['callback']) $data['callback']($key, $resp);
-                        $this->multiResp->addResponse($key, $resp->json($parse));
+                        $this->multiResp->addResponse($key, $resp);
                         $this->multiResp->addEnd($key, $data);
                         echo "Promise! {$key} / {$count} \n";
                         return $response->getBody()->getContents();
@@ -992,6 +992,9 @@ class GHRMultipleResponse
         return $this->finish;
     }
 
+    /**
+     * @return GHRResponseData[]
+     */
     public function responses()
     {
         return $this->response;
