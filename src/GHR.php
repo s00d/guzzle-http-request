@@ -15,7 +15,6 @@ use Psr\Http\Message\ResponseInterface;
 
 use \GuzzleHttp\Promise\EachPromise;
 use \GuzzleHttp\HandlerStack;
-use \Symfony\Component\DomCrawler\Form;
 
 use Kevinrob\GuzzleCache\CacheMiddleware;
 use \Illuminate\Support\Facades\Cache;
@@ -602,7 +601,7 @@ class GHR extends GHRCore
 
     /**
      * Отправка параметров из формы
-     * @param $form Form Форма с параметрами
+     * @param $form \Symfony\Component\DomCrawler\Form Форма с параметрами
      * $form = $this->crawler->selectButton('Войти')->form();
      *  $form->setValues([
      *      'IDToken1' => $IDToken1,
@@ -611,7 +610,7 @@ class GHR extends GHRCore
      * @param $values array Дополнительные параметры в виде массива
      * @return $this
      */
-    public function sendForm(Form $form, array $values = [])
+    public function sendForm(\Symfony\Component\DomCrawler\Form $form, array $values = [])
     {
         $form->setValues($values);
 
