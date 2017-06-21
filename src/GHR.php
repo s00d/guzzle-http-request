@@ -592,7 +592,7 @@ class GHR extends GHRCore
 
     /**
      * Куки
-     * @return $this->cookieJar
+     * @return FileCookieJarMod|CookieJar
      */
     public function cookie()
     {
