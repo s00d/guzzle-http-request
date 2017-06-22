@@ -135,7 +135,7 @@ class GHR extends GHRCore
                         $this->multiResp->addResponse($key, $resp);
                         $this->multiResp->addEnd($key, $data);
                         echo "Promise! {$key} / {$count} \n";
-                        return $response->getBody()->getContents();
+                        return $resp;
                     }, function (RequestException $e) use ($key, $data, $count) {
                         $this->multiResp->addError($key, $data);
                         echo "err! {$key} / {$count} \n";
