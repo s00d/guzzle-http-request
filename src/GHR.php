@@ -15,6 +15,7 @@ use Psr\Http\Message\ResponseInterface;
 
 use \GuzzleHttp\Promise\EachPromise;
 use \GuzzleHttp\HandlerStack;
+use \Symfony\Component\DomCrawler\Form;
 
 use Kevinrob\GuzzleCache\CacheMiddleware;
 use \Illuminate\Support\Facades\Cache;
@@ -57,7 +58,7 @@ class GHR extends GHRCore
             $handlerStack->push($middleware);
         }
 
-        self::$_instance->cookieJar = config('ghr.cookie_file') ? new FileCookieJarMod(storage_path('cookie\\'.config('ghr.cookie_file')), TRUE) : new CookieJar;
+        self::$_instance->cookieJar = config('ghr.cookie_file') ? new FileCookieJarMod(storage_path('cookie/'.config('ghr.cookie_file')), TRUE) : new CookieJar;
         $param = [
             'timeout' => 100,
             'verify' => false,
@@ -573,9 +574,13 @@ class GHR extends GHRCore
      */
     public function getCrawler()
     {
-        $crawler = new Crawler(null, $this->getUrl());
-        $crawler->addContent($this->getRequestBody(), $this->data->getHeader('Content-Type'));
-        return $crawler;
+        try {
+            $crawler = new Crawler(null, $this->getUrl());
+            $crawler->addContent($this->getRequestBody(), $this->data->getHeader('Content-Type'));
+            return $crawler;
+        } catch (\Exception $e) {
+            return false;
+        }
 
     }
 
@@ -592,7 +597,7 @@ class GHR extends GHRCore
 
     /**
      * Куки
-     * @return FileCookieJarMod|CookieJar
+     * @return $this->cookieJar
      */
     public function cookie()
     {
@@ -851,7 +856,7 @@ class GHRResponseData
 
     function body()
     {
-        return (string)$this->response->getBody();
+        return ($this->response) ? (string)$this->response->getBody() : '';
     }
 
     function contents()
@@ -861,12 +866,12 @@ class GHRResponseData
 
     function json($parse = true, $depth = 512, $options = 0)
     {
-        return json_decode($this->response->getBody()->getContents(), $parse, $depth, $options);
+        return json_decode($this->body(), $parse, $depth, $options);
     }
 
     function getHeader($header, $first = true)
     {
-        return $this->response->getHeaderLine($header);
+        return ($this->response) ? $this->response->getHeaderLine($header) : '';
 //        $normalizedHeader = str_replace('-', '_', strtolower($header));
 //        $seader = $this->response->getHeaders();
 //        foreach ($seader as $key => $value) {
