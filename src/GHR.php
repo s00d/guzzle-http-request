@@ -496,6 +496,12 @@ class GHR extends GHRCore
     public function disableSaveCookie() {
         if($this->cookieJar instanceof FileCookieJarMod) {
             $this->cookieJar->disableSave();
+        }
+        return $this;
+    }
+
+    public function removeCookie() {
+        if($this->cookieJar instanceof FileCookieJarMod) {
             $this->cookieJar->remove();
         }
         return $this;
