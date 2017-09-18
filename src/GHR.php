@@ -9,6 +9,7 @@ use \GuzzleHttp\Cookie\FileCookieJar;
 use GuzzleHttp\Cookie\SetCookie;
 use GuzzleHttp\Exception\RequestException;
 use GuzzleHttp\MessageFormatter;
+use GuzzleHttp\TransferStats;
 use Symfony\Component\DomCrawler\Crawler;
 use Psr\Http\Message\StreamInterface;
 use Psr\Http\Message\ResponseInterface;
@@ -23,6 +24,7 @@ use \Kevinrob\GuzzleCache\Strategy\PrivateCacheStrategy;
 use \Kevinrob\GuzzleCache\Storage\LaravelCacheStorage;
 
 use Concat\Http\Middleware\Logger;
+
 
 /**
  * @author s00d <Virus191288@gmail.com>
@@ -98,11 +100,6 @@ class GHR extends GHRCore
             $this->paramsMarge($this->body, $this->getUrlParams());
             $this->data = new GHRResponseData($this->client->request($this->type, $this->url, $this->params));
 
-            if ($this->maxRedirects > 0 && $this->data->isRedirect()) {
-                $this->url = $this->getAbsoluteUri($this->data->getHeader('Location'));
-                $this->addHeader('host', $this->extractHost());
-                return $this->followRedirect();
-            }
         } catch (RequestException $e) {
             $this->data = new GHRResponseData($e->getResponse());
         }
@@ -555,14 +552,16 @@ class GHR extends GHRCore
      * @param $redirects Boolean
      * @return $this
      */
-    public function setGuzzleRedirects($redirects)
+    public function setGuzzleRedirects($redirects, $max = 0, $strict = true, $referer = true)
     {
-        if ($redirects) $this->params['redirect'] = [
-            'strict' => true,
-            'max' => $this->maxRedirects
+        if ($redirects) $this->params['allow_redirects'] = [
+            'strict' => $strict,
+            'max' => $max,
+            'referer' => $referer,
+            'track_redirects' => true
         ];
-        else $this->params['redirect'] = false;
-        $this->params['allow_redirects'] = $redirects;
+        else $this->params['allow_redirects'] = false;
+        $this->params['redirect'] = $redirects;
         return $this;
     }
 
@@ -745,40 +744,14 @@ class GHRCore
                 CURLOPT_SSL_VERIFYHOST => false,
                 CURLOPT_SSL_VERIFYPEER => false,
                 'body_as_string' => true
-            ]
+            ],
+            "on_stats" => function (TransferStats $stats) {
+                //var_dump('getEffectiveUri', $stats->getEffectiveUri());
+                //var_dump('getTransferTime', $stats->getTransferTime());
+//                var_dump('getHandlerStats', $stats->getHandlerStats());
+            }
         ];
         return $params;
-    }
-
-    /**
-     * Форматирование ссылки, чистить от мусора, подставляет домен в случае отсутствия
-     *
-     * @param string $uri A URI
-     * @return string An absolute URI
-     */
-    protected function getAbsoluteUri($uri)
-    {
-        if (is_array($uri)) $uri = end($uri);
-        // already absolute?
-        if (0 === strpos($uri, 'http://') || 0 === strpos($uri, 'https://')) return $uri;
-        // protocol relative URL
-        if (0 === strpos($uri, '//')) return parse_url($uri, PHP_URL_SCHEME) . ':' . $uri;
-
-        $currentUri = ($this->previousUrl) ? $this->previousUrl : $this->client->getConfig('base_url');
-        // protocol relative URL
-        if (0 === strpos($uri, '//')) return parse_url($currentUri, PHP_URL_SCHEME) . ':' . $uri;
-        // anchor or query string parameters?
-        if (!$uri || '#' == $uri[0] || '?' == $uri[0]) return preg_replace('/[#?].*?$/', '', $currentUri) . $uri;
-
-        if ('/' !== $uri[0]) {
-            $path = parse_url($currentUri, PHP_URL_PATH);
-            if ('/' !== substr($path, -1)) {
-                $path = substr($path, 0, strrpos($path, '/') + 1);
-            }
-            $uri = $path . $uri;
-        }
-
-        return preg_replace('#^(.*?//[^/]+)\/.*$#', '$1', $currentUri) . $uri;
     }
 
     /**
@@ -813,28 +786,6 @@ class GHRCore
         $promise->promise()->wait();
     }
 
-    /**
-     * Проверка и настройка редиректов
-     * @return $this
-     */
-    protected function followRedirect()
-    {
-        if (empty($this->url)) throw new \LogicException('The request was not redirected.');
-
-        if ($this->maxRedirects > 0 && $this->redirectCount > $this->maxRedirects) {
-            throw new \LogicException(sprintf('The maximum number (%d) of redirections was reached.', $this->maxRedirects));
-        }
-
-        if ($this->data->isGetRedirect()) {
-            $this->type = 'GET';
-        } else $this->type = $this->rType;
-
-//        if ('GET' == strtoupper($this->type))
-        $this->removeDataParams();
-
-        return $this->send(true);
-    }
-
     protected function getUrlParams()
     {
         parse_str(parse_url($this->url, PHP_URL_QUERY), $query);
@@ -867,7 +818,14 @@ class GHRResponseData
 
     function contents()
     {
-        return $this->response->getBody()->getContents();
+        try {
+            if(!$this->response) return false;
+            $data = $this->response->getBody();
+            if(!$data) return false;
+            return $data->getContents();
+        } catch (\Exception $e) {
+            return false;
+        }
     }
 
     function json($parse = true, $depth = 512, $options = 0)
@@ -1060,7 +1018,7 @@ class FileCookieJarMod extends CookieJar {
     }
 
     public function remove() {
-        unlink($this->filename);
+        if (file_exists($this->filename)) unlink($this->filename);
     }
 
     public function save($filename)
