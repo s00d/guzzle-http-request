@@ -249,14 +249,13 @@ class GHR extends GHRCore
     }
 
     /**
-     * Установка типа, rType для редиректов
+     * Установка типа
      * @param $type string
      * @return $this
      */
     public function setType($type)
     {
         $this->type = $type;
-        $this->rType = $type;
         return $this;
     }
 
@@ -683,7 +682,7 @@ class GHRCore
     protected $cookieJar;
     protected $url = '';
     protected $referer = false;
-    protected $type = 'GET', $rType = 'GET';
+    protected $type = 'GET';
     /** @var GHRResponseData $data */
     protected $data = false;
 
