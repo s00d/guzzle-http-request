@@ -91,8 +91,7 @@ class GHR extends GHRCore
     public function send($redirect = false)
     {
         try {
-            if ($this->previousUrl) $this->addHeader('referer', $this->previousUrl);
-            $this->previousUrl = $this->url;
+            if ($this->referer) $this->addHeader('referer', $this->referer);
             if ($this->type == 'POST') $this->addHeader('Content-Type', $this->contentType);
             else $this->removeHeader('Content-Type');
             if ($redirect) $this->redirectCount++; else $this->redirectCount = 0;
@@ -243,8 +242,8 @@ class GHR extends GHRCore
      * @param $url string|boolean
      * @return self
      */
-    public function setPreviousUrl($url = false) {
-        $this->previousUrl = $url;
+    public function setReferer($url = false) {
+        $this->referer = $url;
         return $this;
 
     }
@@ -682,7 +681,8 @@ class GHRCore
     protected $client;
     /** @var FileCookieJar $cookieJar */
     protected $cookieJar;
-    protected $url = '', $previousUrl = false;
+    protected $url = '';
+    protected $referer = false;
     protected $type = 'GET', $rType = 'GET';
     /** @var GHRResponseData $data */
     protected $data = false;
