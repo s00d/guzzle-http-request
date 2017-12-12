@@ -25,7 +25,7 @@ To start using Laravel, add the Service Provider and the Facade to your `config/
 ```php
 'aliases' => [
 	// ...
-	'GHR' => s00d\GuzzleHttpRequest\Facades\GHR::class,
+	'GHR' => s00d\GuzzleHttpRequest\Facades\GHRFacade::class,
 ]
 ```
 

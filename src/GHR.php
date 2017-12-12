@@ -16,7 +16,6 @@ use Psr\Http\Message\ResponseInterface;
 
 use \GuzzleHttp\Promise\EachPromise;
 use \GuzzleHttp\HandlerStack;
-use \Symfony\Component\DomCrawler\Form;
 
 use Kevinrob\GuzzleCache\CacheMiddleware;
 use \Illuminate\Support\Facades\Cache;

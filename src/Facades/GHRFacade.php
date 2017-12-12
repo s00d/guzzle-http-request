@@ -4,7 +4,7 @@ namespace s00d\GuzzleHttpRequest\Facades;
 
 use Illuminate\Support\Facades\Facade as BaseFacade;
 
-class GHR extends BaseFacade {
+class GHRFacade extends BaseFacade {
 
 	/**
 	 * Get the registered name of the component.
