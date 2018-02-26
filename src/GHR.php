@@ -26,8 +26,6 @@ use Concat\Http\Middleware\Logger;
 
 class GHR extends GHRCore
 {
-    public function __construct(){}
-
     /**
      * Создание запроса, для сброса всех параметров необходимо еще раз обратиться к этой функции
      * @param $url string
