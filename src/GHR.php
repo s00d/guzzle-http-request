@@ -44,7 +44,7 @@ class GHR extends GHRCore
                 new \Monolog\Handler\RotatingFileHandler(storage_path('logs/ghr.log'))
             );
             $middleware = new Logger($logger);
-            $middleware->setFormatter(new MessageFormatter("'{method} {target} HTTP/{version}' " . PHP_EOL . " [{date_common_log} {code} {res_header_Content-Length}]"));
+            $middleware->setFormatter(new MessageFormatter("'{method} {target} HTTP/{version}' " . PHP_EOL . ' [{date_common_log} {code} {res_body} {res_header_Content-Length}]'));
             $handlerStack->push($middleware);
         }
 
