@@ -29,9 +29,10 @@ class GHR extends GHRCore
     /**
      * Создание запроса, для сброса всех параметров необходимо еще раз обратиться к этой функции
      * @param $url string
+     * @param bool|array $middlewares
      * @return self
      */
-    public static function createRequest($url = '')
+    public static function createRequest($url = '', $middlewares = false)
     {
         if (!self::$_instance) self::$_instance = new self();
 
@@ -45,6 +46,12 @@ class GHR extends GHRCore
             $middleware = new Logger($logger);
             $middleware->setFormatter(new MessageFormatter("'{method} {target} HTTP/{version}' " . PHP_EOL . " [{date_common_log} {code} {res_header_Content-Length}]"));
             $handlerStack->push($middleware);
+        }
+
+        if ($middlewares) {
+            foreach ($middlewares as $middleware) {
+                $handlerStack->unshift($middleware);
+            }
         }
 
         self::$_instance->cookieJar = config('ghr.cookie_file') ? new FileCookieJarMod(storage_path('cookie/'.config('ghr.cookie_file')), TRUE) : new CookieJar;
