@@ -23,9 +23,9 @@ class GHRResponseData
     {
         try {
             if(!$this->response) return false;
-            $data = $this->response->getBody();
+            $data = $this->body();
             if(!$data) return false;
-            return $data->getContents();
+            return $data;
         } catch (\Exception $e) {
             return false;
         }
