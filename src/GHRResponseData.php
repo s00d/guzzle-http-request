@@ -16,7 +16,7 @@ class GHRResponseData
 
     function body()
     {
-        return ($this->response) ? (string)$this->response->getBody() : '';
+        return $this->response ? $this->response->getBody()->__toString() : '';
     }
 
     function contents()
