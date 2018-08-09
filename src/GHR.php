@@ -258,7 +258,7 @@ class GHR extends GHRCore
 
     /**
      * Установка параметров формы в формате массива
-     * @param $body array
+     * @param $body array|string
      * @param $type string
      * @return $this
      */
