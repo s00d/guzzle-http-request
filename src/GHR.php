@@ -90,7 +90,10 @@ class GHR extends GHRCore
             else $this->removeHeader('Content-Type');
             if ($redirect) $this->redirectCount++; else $this->redirectCount = 0;
             if (!$redirect) $this->addHeader('host', $this->extractHost());
-            $this->paramsMarge($this->body, $this->getUrlParams());
+            if (is_array($this->body)) {
+                $this->paramsMarge($this->body, $this->getUrlParams());
+            }
+            if (is_string($this->body)) $this->params = $this->body;
             $this->data = new GHRResponseData($this->client->request($this->type, $this->url, $this->params));
 
         } catch (RequestException $e) {
@@ -314,6 +317,7 @@ class GHR extends GHRCore
         $this->removeDataParams();
         $this->contentTypeAsForm();
         $this->body_type = 'multipart';
+        $this->contentType = 'multipart';
         $this->body = $multipart;
         return $this;
     }
