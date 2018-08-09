@@ -322,6 +322,15 @@ class GHR extends GHRCore
         return $this;
     }
 
+    public function setMultipartStream($data)
+    {
+        $body = new \GuzzleHttp\Psr7\MultipartStream($data);
+        $this->removeDataParams();
+        $this->setContentType('multipart/form-data; boundary='. $body->getBoundary());
+        $this->body = $body->getContents();
+        return $this;
+    }
+
     /**
      * Установка параметров формы в формате query
      * @param $query array
