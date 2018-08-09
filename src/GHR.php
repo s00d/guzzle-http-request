@@ -93,7 +93,7 @@ class GHR extends GHRCore
             if (is_array($this->body)) {
                 $this->paramsMarge($this->body, $this->getUrlParams());
             }
-            if (is_string($this->body)) $this->params = $this->body;
+            if (is_string($this->body)) $this->params['body'] = $this->body;
             $this->data = new GHRResponseData($this->client->request($this->type, $this->url, $this->params));
 
         } catch (RequestException $e) {
