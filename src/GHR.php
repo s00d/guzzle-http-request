@@ -322,6 +322,10 @@ class GHR extends GHRCore
         return $this;
     }
 
+    /**
+     * @param $data array
+     * @return $this
+     */
     public function setMultipartStream($data)
     {
         $body = new \GuzzleHttp\Psr7\MultipartStream($data);
@@ -505,6 +509,13 @@ class GHR extends GHRCore
     public function removeCookie() {
         if($this->cookieJar instanceof FileCookieJarMod) {
             $this->cookieJar->remove();
+        }
+        return $this;
+    }
+
+    public function saveCookie() {
+        if($this->cookieJar instanceof FileCookieJarMod) {
+            $this->cookieJar->saveMe();
         }
         return $this;
     }

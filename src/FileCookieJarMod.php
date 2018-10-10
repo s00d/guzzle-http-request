@@ -58,6 +58,11 @@ class FileCookieJarMod extends CookieJar {
         }
     }
 
+    public function saveMe()
+    {
+        if($this->saveFile) $this->save($this->filename);
+    }
+
     public function load($filename)
     {
         $json = file_get_contents($filename);
