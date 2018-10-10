@@ -63,6 +63,11 @@ class FileCookieJarMod extends CookieJar {
         if($this->saveFile) $this->save($this->filename);
     }
 
+    public function setCookieStr($str)
+    {
+        $this->setCookie(SetCookie::fromString($str));
+    }
+
     public function load($filename)
     {
         $json = file_get_contents($filename);
