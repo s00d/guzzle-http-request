@@ -95,10 +95,6 @@ class GHR extends GHRCore
             }
             if (is_string($this->body)) $this->params['body'] = $this->body;
             $this->data = new GHRResponseData($this->client->request($this->type, $this->url, $this->params));
-            try {
-                $this->cookie()->setCookieStr($this->getRequestData()->getHeader('Set-Cookie'));
-            } catch (\Exception $e) {}
-
         } catch (RequestException $e) {
             $this->data = new GHRResponseData($e->getResponse());
         }
