@@ -7,9 +7,13 @@ use \GuzzleHttp\Cookie\CookieJar;
 
 use GuzzleHttp\Exception\RequestException;
 use GuzzleHttp\MessageFormatter;
+use Monolog\Handler\StreamHandler;
 use Symfony\Component\DomCrawler\Crawler;
 use Psr\Http\Message\StreamInterface;
 use Psr\Http\Message\ResponseInterface;
+use Psr\Http\Message\RequestInterface;
+use Psr\Http\Message\UriInterface;
+use GuzzleHttp\RequestOptions;
 
 use \GuzzleHttp\HandlerStack;
 use Concat\Http\Middleware\Logger;
@@ -26,11 +30,25 @@ use Concat\Http\Middleware\Logger;
 
 class GHR extends GHRCore
 {
+    /** @var \Monolog\Logger $logger */
+    private $logger = null;
+
+    private function log($string, $type = \Monolog\Logger::INFO) {
+        if(!$this->logger) return;
+        $arg_lists = func_get_args();
+
+        foreach ($arg_lists as $arg) {
+            $this->logger->addRecord($type, $arg, []);
+        }
+
+    }
+
     /**
      * Создание запроса, для сброса всех параметров необходимо еще раз обратиться к этой функции
      * @param $url string
      * @param bool|array $middlewares
      * @return self
+     * @throws \Exception
      */
     public static function createRequest($url = '', $middlewares = false)
     {
@@ -40,10 +58,10 @@ class GHR extends GHRCore
         if (config('ghr.cache')) $handlerStack->push(self::$_instance->_createCacheMiddleware(), 'cache');
 
         if (config('ghr.logs')) {
-            $logger = with(new \Monolog\Logger("api_log"))->pushHandler(
+            self::$_instance->logger = with(new \Monolog\Logger('api_log'))->pushHandler(
                 new \Monolog\Handler\RotatingFileHandler(storage_path('logs/ghr.log'))
             );
-            $middleware = new Logger($logger);
+            $middleware = new Logger(self::$_instance->logger);
             $middleware->setFormatter(new MessageFormatter("'{method} {target} HTTP/{version}' " . PHP_EOL . ' [{date_common_log} {code} {res_body} {res_header_Content-Length}]'));
             $handlerStack->push($middleware);
         }
@@ -56,9 +74,9 @@ class GHR extends GHRCore
 
         self::$_instance->cookieJar = config('ghr.cookie_file') ? new FileCookieJarMod(storage_path('cookie/'.config('ghr.cookie_file')), TRUE) : new CookieJar;
         $param = [
-            'timeout' => 100,
-            'verify' => false,
-            'cookies' => self::$_instance->cookieJar,
+            RequestOptions::TIMEOUT => 100,
+            RequestOptions::VERIFY => false,
+            RequestOptions::COOKIES => self::$_instance->cookieJar,
             'handler' => $handlerStack
         ];
         if (config('ghr.base_url')) $param['base_url'] = config('ghr.base_url');
@@ -81,6 +99,7 @@ class GHR extends GHRCore
      * Отправка запроса
      * @param $redirect boolean не передавать параметр, необходим для правильной работы класса
      * @return $this
+     * @throws \GuzzleHttp\Exception\GuzzleException
      */
     public function send($redirect = false)
     {
@@ -176,7 +195,7 @@ class GHR extends GHRCore
      */
     public function addHeader($title, $data)
     {
-        $this->params['headers'][$title] = $data;
+        $this->params[RequestOptions::HEADERS][$title] = $data;
         return $this;
     }
 
@@ -187,7 +206,7 @@ class GHR extends GHRCore
      */
     public function addHeaders($data)
     {
-        foreach ($data as $key => $item) $this->params['headers'][$key] = $item;
+        foreach ($data as $key => $item) $this->params[RequestOptions::HEADERS][$key] = $item;
         return $this;
     }
 
@@ -208,7 +227,7 @@ class GHR extends GHRCore
      */
     public function setHeader($data)
     {
-        $this->params['headers'] = $data;
+        $this->params[RequestOptions::HEADERS] = $data;
         return $this;
     }
 
@@ -219,7 +238,7 @@ class GHR extends GHRCore
      */
     public function removeHeader($title)
     {
-        unset($this->params['headers'][$title]);
+        unset($this->params[RequestOptions::HEADERS][$title]);
         return $this;
     }
 
@@ -409,7 +428,7 @@ class GHR extends GHRCore
      */
     public function setProxy($proxy)
     {
-        $this->params['proxy'] = $proxy;
+        $this->params[RequestOptions::PROXY] = $proxy;
         return $this;
     }
 
@@ -419,7 +438,7 @@ class GHR extends GHRCore
      */
     public function removeProxy()
     {
-        unset($this->params['proxy']);
+        unset($this->params[RequestOptions::PROXY]);
         return $this;
     }
 
@@ -430,7 +449,7 @@ class GHR extends GHRCore
      */
     public function setSslVersion($version)
     {
-        $this->params['curl'][CURLOPT_SSLVERSION] = $version;
+        $this->params[][CURLOPT_SSLVERSION] = $version;
         return $this;
     }
 
@@ -462,7 +481,7 @@ class GHR extends GHRCore
      */
     public function setTimeout($seconds)
     {
-        $this->params['timeout'] = $seconds;
+        $this->params[RequestOptions::TIMEOUT] = $seconds;
         return $this;
     }
 
@@ -473,8 +492,8 @@ class GHR extends GHRCore
      */
     public function setDebug($debug)
     {
-        if ($debug) $this->params['timeout'] = true;
-        else unset($this->params['timeout']);
+        if ($debug) $this->params[RequestOptions::TIMEOUT] = true;
+        else unset($this->params[RequestOptions::TIMEOUT]);
         return $this;
     }
 
@@ -526,7 +545,7 @@ class GHR extends GHRCore
      */
     public function setHttpErrors($http_errors)
     {
-        $this->params['http_errors'] = $http_errors;
+        $this->params[RequestOptions::HTTP_ERRORS] = $http_errors;
         return $this;
     }
 
@@ -565,17 +584,26 @@ class GHR extends GHRCore
     /**
      * Включение редиректов Guzzle, для правильной работы редиректов класса, эти редиректы должны быть выключены
      * @param $redirects Boolean
+     * @param int $max
+     * @param bool $strict
+     * @param bool $referer
      * @return $this
      */
-    public function setGuzzleRedirects($redirects, $max = 0, $strict = true, $referer = true)
+    public function setGuzzleRedirects($redirects, $max = 0, $strict = false, $referer = true)
     {
-        if ($redirects) $this->params['allow_redirects'] = [
+        $onRedirect = function(RequestInterface $request, ResponseInterface $response, UriInterface $uri) {
+            $this->setUrl($uri);
+            $this->log('Redirecting! From ' . $request->getUri() . ' to ' . $uri);
+        };
+
+        if ($redirects) $this->params[RequestOptions::ALLOW_REDIRECTS] = [
             'strict' => $strict,
             'max' => $max,
             'referer' => $referer,
-            'track_redirects' => true
+            'track_redirects' => true,
+            'on_redirect'     => $onRedirect,
         ];
-        else $this->params['allow_redirects'] = false;
+        else $this->params[RequestOptions::ALLOW_REDIRECTS] = false;
         $this->params['redirect'] = $redirects;
         return $this;
     }
@@ -617,7 +645,7 @@ class GHR extends GHRCore
 
     /**
      * Куки
-     * @return FileCookieJarMod
+     * @return \GuzzleHttp\Cookie\FileCookieJar
      */
     public function cookie()
     {
@@ -634,13 +662,14 @@ class GHR extends GHRCore
      *  ]);
      * @param $values array Дополнительные параметры в виде массива
      * @return $this
+     * @throws \GuzzleHttp\Exception\GuzzleException
      */
     public function sendForm(\Symfony\Component\DomCrawler\Form $form, array $values = [])
     {
         $form->setValues($values);
 
-        $this->setType($form->getMethod());
-        $this->setUrl($form->getUri());
+        $this->setType($this->type);
+        $this->setUrl($this->getUrl());
 
         $values = $form->getPhpValues();
         if (!empty($values)) $this->setFormParams($values);
@@ -655,7 +684,7 @@ class GHR extends GHRCore
      */
     public function getRequestBody()
     {
-        return ($this->data) ? $this->data->body() : false;
+        return $this->data ? $this->data->body() : false;
     }
 
     /**
@@ -673,7 +702,7 @@ class GHR extends GHRCore
      */
     public function getContents()
     {
-        return ($this->data) ? $this->data->contents() : false;
+        return $this->data ? $this->data->contents() : false;
     }
 
     /**
@@ -683,7 +712,7 @@ class GHR extends GHRCore
      */
     public function getJson($parse = true)
     {
-        return ($this->data) ? $this->data->json($parse) : false;
+        return $this->data ? $this->data->json($parse) : false;
     }
 
 }

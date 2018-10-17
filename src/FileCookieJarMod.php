@@ -8,10 +8,8 @@
 
 namespace s00d\GuzzleHttpRequest;
 
-
 use \GuzzleHttp\Cookie\CookieJar;
 use GuzzleHttp\Cookie\SetCookie;
-
 
 class FileCookieJarMod extends CookieJar {
     /** @var string filename */
@@ -27,6 +25,8 @@ class FileCookieJarMod extends CookieJar {
 
     public function __construct($cookieFile, $storeSessionCookies = false)
     {
+        parent::__construct(false, []);
+
         $this->filename = $cookieFile;
         $this->storeSessionCookies = $storeSessionCookies;
 

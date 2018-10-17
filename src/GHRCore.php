@@ -12,6 +12,7 @@ use Kevinrob\GuzzleCache\CacheMiddleware;
 use \Illuminate\Support\Facades\Cache;
 use \Kevinrob\GuzzleCache\Strategy\PrivateCacheStrategy;
 use \Kevinrob\GuzzleCache\Storage\LaravelCacheStorage;
+use GuzzleHttp\RequestOptions;
 
 class GHRCore
 {
@@ -69,12 +70,12 @@ class GHRCore
     protected function genParams()
     {
         $params = [
-            'verify' => false,
-            'timeout' => 100,
-            'headers' => config('ghr.default_headers'),
-            'allow_redirects' => false,
+            RequestOptions::VERIFY => false,
+            RequestOptions::TIMEOUT => 100,
+            RequestOptions::HEADERS => config('ghr.default_headers'),
+            RequestOptions::ALLOW_REDIRECTS => false,
             'redirect' => false,
-            'http_errors' => true,
+            RequestOptions::HTTP_ERRORS => true,
             'curl' => [
                 CURLOPT_SSLVERSION => 4,
                 // CURLOPT_SSLVERSION => CURL_SSLVERSION_DEFAULT,
@@ -85,12 +86,12 @@ class GHRCore
                 CURLOPT_SSL_VERIFYHOST => false,
                 CURLOPT_SSL_VERIFYPEER => false,
                 'body_as_string' => true
-            ],
-            "on_stats" => function (TransferStats $stats) {
+            ]
+//            RequestOptions::ON_STATS => function (TransferStats $stats) {
                 //var_dump('getEffectiveUri', $stats->getEffectiveUri());
                 //var_dump('getTransferTime', $stats->getTransferTime());
 //                var_dump('getHandlerStats', $stats->getHandlerStats());
-            }
+//            }
         ];
         return $params;
     }
