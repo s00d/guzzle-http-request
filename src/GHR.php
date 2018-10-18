@@ -449,7 +449,7 @@ class GHR extends GHRCore
      */
     public function setSslVersion($version)
     {
-        $this->params[][CURLOPT_SSLVERSION] = $version;
+        $this->params['curl'][CURLOPT_SSLVERSION] = $version;
         return $this;
     }
 
