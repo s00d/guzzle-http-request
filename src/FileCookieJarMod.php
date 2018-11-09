@@ -56,7 +56,10 @@ class FileCookieJarMod extends CookieJar {
         if (false === file_put_contents($filename, $jsonStr)) {
             throw new \RuntimeException("Unable to save file {$filename}");
         }
-        chmod($filename, 0777);
+        try {
+            chmod($filename, 0777);
+        } catch (\Exception $e) {}
+
     }
 
     public function saveMe()
