@@ -406,6 +406,7 @@ class GHR extends GHRCore
         unset($this->params['body']);
         unset($this->params['form_params']);
         unset($this->params['json']);
+        unset($this->params['xml']);
         unset($this->params['query']);
         unset($this->params['multipart']);
         return $this;
