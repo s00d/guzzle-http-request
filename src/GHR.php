@@ -382,6 +382,20 @@ class GHR extends GHRCore
     }
 
     /**
+     * Установка параметров формы в формате xml
+     * @param $json array
+     * @return $this
+     */
+    public function setXml($xml)
+    {
+        $this->removeDataParams();
+        $this->contentTypeAsJson();
+        $this->body_type = 'text/xml; charset=UTF8';
+        $this->body = $xml;
+        return $this;
+    }
+
+    /**
      * Отчистка параметров формы
      * @return $this
      */
