@@ -389,8 +389,8 @@ class GHR extends GHRCore
     public function setXml($xml)
     {
         $this->removeDataParams();
-        $this->contentTypeAsJson();
-        $this->body_type = 'text/xml; charset=UTF8';
+        $this->contentTypeAsXml();
+        $this->body_type = 'xml';
         $this->body = $xml;
         return $this;
     }
@@ -583,6 +583,11 @@ class GHR extends GHRCore
     {
         $this->contentType = $type;
         return $this;
+    }
+
+    public function contentTypeAsXml()
+    {
+        return $this->setContentType('text/xml; charset=UTF8');
     }
 
     public function contentTypeAsJson()
