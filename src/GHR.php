@@ -47,10 +47,10 @@ class GHR extends GHRCore
      * Создание запроса, для сброса всех параметров необходимо еще раз обратиться к этой функции
      * @param $url string
      * @param bool|array $middlewares
+     * @param null $handler
      * @return self
-     * @throws \Exception
      */
-    public static function createRequest($url = '', $middlewares = false)
+    public static function createRequest($url = '', $middlewares = false, $handler = null)
     {
         if (!self::$_instance) self::$_instance = new self();
 
@@ -80,6 +80,9 @@ class GHR extends GHRCore
             'handler' => $handlerStack
         ];
         if (config('ghr.base_url')) $param['base_url'] = config('ghr.base_url');
+        if($handler) {
+            $param['handler'] = $handler;
+        }
         self::$_instance->client = new Client($param);
 
         self::$_instance->url = $url;
