@@ -5,6 +5,7 @@ namespace s00d\GuzzleHttpRequest;
 use \GuzzleHttp\Client;
 use \GuzzleHttp\Cookie\CookieJar;
 
+use GuzzleHttp\Cookie\SetCookie;
 use GuzzleHttp\Exception\RequestException;
 use GuzzleHttp\MessageFormatter;
 use Monolog\Handler\StreamHandler;
@@ -552,6 +553,27 @@ class GHR extends GHRCore
     public function saveCookie() {
         if($this->cookieJar instanceof FileCookieJarMod) {
             $this->cookieJar->saveMe();
+        }
+        return $this;
+    }
+
+    /**
+     * @param array $cookies = ["name" => "val","name" => "val",]
+     * @param $domain
+     * @return $this
+     */
+    public function addCookies(array $cookies, $domain) {
+        if($this->cookieJar instanceof FileCookieJarMod) {
+            foreach ($cookies as $name => $value) {
+                $this->cookieJar->setCookie(new SetCookie([
+                    'Domain'  => $domain,
+                    'Name'    => $name,
+                    'Value'   => $value,
+                    'Discard' => true
+                ]));
+            }
+
+            $this->params['cookies'] =  $this->cookieJar;
         }
         return $this;
     }
