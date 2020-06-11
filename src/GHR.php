@@ -317,6 +317,16 @@ class GHR extends GHRCore
         return $this;
     }
 
+    public function setTextParams($form_params)
+    {
+        $this->removeDataParams();
+        $this->body_type = 'body';
+        $this->body = json_encode($form_params);
+        $this->setContentType('text/plain');
+        $this->addHeader('content-type', 'text/plain');
+        return $this;
+    }
+
     public function setParamsByType($type, $form_params)
     {
         $this->removeDataParams();
