@@ -421,12 +421,15 @@ class GHR extends GHRCore
     {
         $this->body_type = false;
         $this->body = [];
-        unset($this->params['body']);
-        unset($this->params['form_params']);
-        unset($this->params['json']);
-        unset($this->params['xml']);
-        unset($this->params['query']);
-        unset($this->params['multipart']);
+        unset(
+            $this->params['body'],
+            $this->params['form_params'],
+            $this->params['json'],
+            $this->params['xml'],
+            $this->params['query'],
+            $this->params['multipart']
+        );
+        $this->removeHeader('content-type');
         return $this;
     }
 
