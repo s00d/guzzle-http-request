@@ -489,6 +489,18 @@ class GHR extends GHRCore
         return $this;
     }
 
+
+    /**
+     * Установка интрфейса
+     * @param $interface
+     * @return $this
+     */
+    public function setInterface($interface)
+    {
+        $this->params['curl'][CURLOPT_INTERFACE] = $interface;
+        return $this;
+    }
+
     /**
      * Добавление авторизации к запросу
      * @param $data array массив в формате ['username', 'password']
